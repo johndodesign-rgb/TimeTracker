@@ -528,11 +528,11 @@ input[readonly] { color: var(--text2); background: var(--bg2); cursor: default; 
     <div style="max-width:480px;">
       <p class="section-title">Settings</p>
       <div class="card">
-        <div class="inv-section-title">Anthropic API key</div>
-        <p style="font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.6;">Required for invoice generation and template analysis. Get yours at <a href="https://console.anthropic.com" target="_blank" style="color:var(--text);">console.anthropic.com</a>. Stored only in your browser — never sent anywhere except directly to Anthropic.</p>
+        <div class="inv-section-title">Cloudflare Worker URL</div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.6;">Paste your Worker URL here after deploying it (see README). Your API key stays in Cloudflare — never in the browser.</p>
         <div class="form-group" style="margin-bottom:12px;">
-          <span class="form-label">API key</span>
-          <input type="password" id="settings-apikey" placeholder="sk-ant-..." autocomplete="off" />
+          <span class="form-label">Worker URL</span>
+          <input type="text" id="settings-apikey" placeholder="https://your-worker.your-subdomain.workers.dev" autocomplete="off" />
         </div>
         <div class="btn-row" style="margin-top:0.75rem;">
           <button class="btn primary" onclick="saveApiKey()">Save key</button>
@@ -1238,32 +1238,30 @@ Requirements: Full HTML with embedded CSS only, @media print styles, professiona
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// API KEY + SETTINGS
+// API + SETTINGS
 // ═══════════════════════════════════════════════════════════════════
-const API_KEY_STORE = 'tt_apikey';
-function getApiKey() { return localStorage.getItem(API_KEY_STORE) || ''; }
+const PROXY_KEY = 'tt_proxy';
+function getProxy() { return localStorage.getItem(PROXY_KEY) || ''; }
 function loadApiKeyField() {
-  const k = getApiKey();
   const el = document.getElementById('settings-apikey');
-  if (el) el.value = k ? '••••••••••••••••' + k.slice(-4) : '';
   const st = document.getElementById('apikey-status');
-  if (st) st.textContent = k ? '✓ Key saved' : 'No key set';
+  const v = getProxy();
+  if (el) el.value = v || '';
+  if (st) st.textContent = v ? '✓ Proxy URL saved' : 'No proxy URL set';
 }
 function saveApiKey() {
   const val = document.getElementById('settings-apikey').value.trim();
-  if (!val || val.startsWith('•')) { toast('Paste your full API key'); return; }
-  if (!val.startsWith('sk-ant-')) { toast('Key should start with sk-ant-'); return; }
-  localStorage.setItem(API_KEY_STORE, val);
-  document.getElementById('settings-apikey').value = '••••••••••••••••' + val.slice(-4);
-  document.getElementById('apikey-status').textContent = '✓ Key saved';
-  toast('API key saved');
+  if (!val) { toast('Paste your Cloudflare Worker URL'); return; }
+  localStorage.setItem(PROXY_KEY, val);
+  document.getElementById('apikey-status').textContent = '✓ Proxy URL saved';
+  toast('Proxy URL saved');
 }
 function clearApiKey() {
-  if (!confirm('Remove saved API key?')) return;
-  localStorage.removeItem(API_KEY_STORE);
+  if (!confirm('Remove saved proxy URL?')) return;
+  localStorage.removeItem(PROXY_KEY);
   document.getElementById('settings-apikey').value = '';
-  document.getElementById('apikey-status').textContent = 'No key set';
-  toast('Key removed');
+  document.getElementById('apikey-status').textContent = 'No proxy URL set';
+  toast('Proxy URL removed');
 }
 function exportData() {
   const blob = new Blob([JSON.stringify(S, null, 2)], {type:'application/json'});
@@ -1279,11 +1277,11 @@ function clearAllData() {
   toast('All data cleared');
 }
 function apiFetch(body) {
-  const key = getApiKey();
-  if (!key) { toast('Add your API key in Settings first'); throw new Error('No API key'); }
-  return fetch('https://api.anthropic.com/v1/messages', {
+  const proxy = getProxy();
+  if (!proxy) { toast('Add your Worker URL in Settings first'); throw new Error('No proxy URL'); }
+  return fetch(proxy, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
 }
