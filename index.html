@@ -453,72 +453,68 @@ input[readonly] { color: var(--text2); background: var(--bg2); cursor: default; 
 
   <!-- ══════════ INVOICE ══════════ -->
   <div id="tab-invoice" class="section">
-    <div class="invoice-layout">
-      <div>
-        <p class="section-title">Template (optional)</p>
-        <div class="upload-zone" id="upload-zone"
-             onclick="document.getElementById('tpl-file').click()"
-             ondragover="event.preventDefault();this.classList.add('drag')"
-             ondragleave="this.classList.remove('drag')"
-             ondrop="handleTplDrop(event)">
-          <input type="file" id="tpl-file" accept=".pdf,.png,.jpg,.jpeg" onchange="handleTplFile(this.files[0])" />
-          <div style="font-size:26px;margin-bottom:6px;">↑</div>
-          <div class="upload-zone-text">
-            <strong>Upload invoice template</strong>
-            PDF, PNG, or JPG — Claude reads your layout and matches the style
-          </div>
-        </div>
-        <div id="tpl-preview" style="display:none;"><div class="template-preview"><img id="tpl-img" src="" alt="" /></div></div>
-        <div id="ai-status" class="ai-status" style="display:none;"></div>
-        <div id="ai-log" class="ai-log" style="display:none;"></div>
-      </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start;">
       <div>
         <p class="section-title">Invoice details</p>
-        <div style="margin-bottom:1rem;">
-          <div class="inv-section-title">Your info</div>
+        <div class="card">
+          <div class="inv-section-title">Statement</div>
           <div class="form-row">
-            <div class="form-group"><span class="form-label">Name / company</span><input id="inv-from-name" type="text" placeholder="Your name or company" /></div>
-            <div class="form-group"><span class="form-label">Email</span><input id="inv-from-email" type="email" placeholder="you@example.com" /></div>
+            <div class="form-group"><span class="form-label">Statement #</span><input id="inv-num" type="text" placeholder="CG001" oninput="updateInvPreview()" /></div>
+            <div class="form-group"><span class="form-label">Date</span><input id="inv-date" type="date" onchange="updateInvPreview()" /></div>
           </div>
-          <div class="form-group" style="margin-bottom:0;"><span class="form-label">Address</span><input id="inv-from-addr" type="text" placeholder="Street, City, State ZIP" /></div>
         </div>
-        <div style="margin-bottom:1rem;">
+        <div class="card">
           <div class="inv-section-title">Bill to</div>
-          <div class="form-row">
-            <div class="form-group"><span class="form-label">Client</span><select id="inv-client" onchange="onInvClientChange()"><option value="">Select client</option></select></div>
-            <div class="form-group"><span class="form-label">Parent client</span><input id="inv-parent" type="text" placeholder="Auto-filled" /></div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <span class="form-label">Client</span>
+            <select id="inv-client" onchange="onInvClientChange()"><option value="">Select client</option></select>
           </div>
-          <div class="form-group" style="margin-bottom:0;"><span class="form-label">Client address</span><input id="inv-client-addr" type="text" placeholder="Billing address" /></div>
-        </div>
-        <div style="margin-bottom:1rem;">
-          <div class="inv-section-title">Invoice meta</div>
-          <div class="form-row four">
-            <div class="form-group"><span class="form-label">Invoice #</span><input id="inv-num" type="text" placeholder="INV-001" /></div>
-            <div class="form-group"><span class="form-label">Date</span><input id="inv-date" type="date" /></div>
-            <div class="form-group"><span class="form-label">Due date</span><input id="inv-due" type="date" /></div>
-            <div class="form-group"><span class="form-label">Bill code / PO</span><input id="inv-billcode" type="text" placeholder="PO-####" /></div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <span class="form-label">Company / address line 1</span>
+            <input id="inv-client-company" type="text" placeholder="VLink" oninput="updateInvPreview()" />
+          </div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <span class="form-label">Address line 2</span>
+            <input id="inv-client-addr1" type="text" placeholder="701 John Fitch Blvd." oninput="updateInvPreview()" />
+          </div>
+          <div class="form-group">
+            <span class="form-label">City, State ZIP</span>
+            <input id="inv-client-addr2" type="text" placeholder="South Windsor, CT 06074" oninput="updateInvPreview()" />
           </div>
         </div>
-        <div style="margin-bottom:1rem;">
+        <div class="card">
           <div class="inv-section-title" style="display:flex;align-items:center;gap:10px;">
             Line items
             <button class="btn small" onclick="addLineItem()">+ row</button>
             <button class="btn small" onclick="pullFromEntries()">Pull unbilled ↗</button>
           </div>
           <table class="line-items-tbl">
-            <thead><tr><th style="width:42%;">Description</th><th style="width:13%;">Hrs</th><th style="width:13%;">Rate</th><th style="width:16%;">Amount</th><th style="width:16%;"></th></tr></thead>
+            <thead><tr>
+              <th style="width:36%;">Description</th>
+              <th style="width:18%;">Date range</th>
+              <th style="width:10%;">Hrs</th>
+              <th style="width:13%;">Rate</th>
+              <th style="width:13%;">Amount</th>
+              <th style="width:10%;"></th>
+            </tr></thead>
             <tbody id="li-body"></tbody>
           </table>
           <div class="inv-totals" id="inv-totals"></div>
         </div>
-        <div style="margin-bottom:1rem;">
+        <div class="card">
           <div class="inv-section-title">Notes</div>
-          <textarea id="inv-notes" placeholder="Payment terms, wire instructions, thank you…" style="min-height:50px;"></textarea>
+          <textarea id="inv-notes" placeholder="Additional notes…" style="min-height:48px;" oninput="updateInvPreview()"></textarea>
         </div>
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-          <button class="btn primary" id="gen-btn" onclick="generateInvoice()">Generate invoice PDF</button>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:4px;">
+          <button class="btn primary" id="gen-btn" onclick="generateInvoice()">Print / Save as PDF</button>
           <span id="gen-status" style="font-size:12px;color:var(--text2);"></span>
         </div>
+      </div>
+
+      <!-- LIVE PREVIEW -->
+      <div>
+        <p class="section-title">Preview</p>
+        <div id="inv-preview" style="background:#fff;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:2rem;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#1a1a18;line-height:1.5;"></div>
       </div>
     </div>
   </div>
@@ -638,7 +634,7 @@ function showTab(t, el) {
   if (t==='projects') { proj_populateClientDropdown(); renderProjects(); }
   if (t==='clients') renderClients();
   if (t==='report') renderReport();
-  if (t==='invoice') { invPopulateClients(); }
+  if (t==='invoice') { invPopulateClients(); updateInvPreview(); }
   if (t==='settings') { loadApiKeyField(); }
 }
 
@@ -1090,151 +1086,188 @@ function copyReport(btn) {
 // ═══════════════════════════════════════════════════════════════════
 // INVOICE
 // ═══════════════════════════════════════════════════════════════════
-let tplBase64=null, tplMime=null, lineItems=[];
+let lineItems = [];
 
 function invPopulateClients() {
   fillClientSelect('inv-client', true);
+  updateInvPreview();
 }
 function onInvClientChange() {
   const c = S.clients.find(x=>x.id===document.getElementById('inv-client').value);
-  document.getElementById('inv-parent').value = c ? (c.parent||'') : '';
+  const company = document.getElementById('inv-client-company');
+  if (c && !company.value) company.value = c.name;
+  updateInvPreview();
 }
-function handleTplDrop(e) {
-  e.preventDefault();
-  document.getElementById('upload-zone').classList.remove('drag');
-  if (e.dataTransfer.files[0]) handleTplFile(e.dataTransfer.files[0]);
-}
-function handleTplFile(file) {
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    tplBase64 = ev.target.result.split(',')[1];
-    tplMime = file.type;
-    if (file.type.startsWith('image/')) {
-      document.getElementById('tpl-img').src = ev.target.result;
-      document.getElementById('tpl-preview').style.display = '';
-    }
-    analyzeTemplate();
-  };
-  reader.readAsDataURL(file);
-}
-async function analyzeTemplate() {
-  const s = document.getElementById('ai-status');
-  const l = document.getElementById('ai-log');
-  s.style.display='flex'; s.innerHTML='<span class="spinner"></span> Reading template…'; l.style.display='none';
-  const isImg = tplMime && tplMime.startsWith('image/');
-  const content = isImg
-    ? [{type:'image',source:{type:'base64',media_type:tplMime,data:tplBase64}},{type:'text',text:'Analyze this invoice template. Return ONLY JSON: {"detected_name":null,"detected_email":null,"detected_address":null,"layout_style":"brief description","fields":["array","of","detected","fields"],"notes":"any observations"}'}]
-    : [{type:'document',source:{type:'base64',media_type:'application/pdf',data:tplBase64}},{type:'text',text:'Analyze this invoice template. Return ONLY JSON: {"detected_name":null,"detected_email":null,"detected_address":null,"layout_style":"brief description","fields":["array","of","detected","fields"],"notes":"any observations"}'}];
-  try {
-    const res = await apiFetch({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content}]});
-    const data = await res.json();
-    const txt = data.content.map(x=>x.text||'').join('');
-    let parsed; try { parsed=JSON.parse(txt.replace(/```json|```/g,'').trim()); } catch(e) { parsed=null; }
-    if (parsed) {
-      s.innerHTML='✓ Template analyzed';
-      if (parsed.detected_name && !document.getElementById('inv-from-name').value) document.getElementById('inv-from-name').value=parsed.detected_name;
-      if (parsed.detected_email && !document.getElementById('inv-from-email').value) document.getElementById('inv-from-email').value=parsed.detected_email;
-      if (parsed.detected_address && !document.getElementById('inv-from-addr').value) document.getElementById('inv-from-addr').value=parsed.detected_address;
-      l.style.display=''; l.textContent=`Layout: ${parsed.layout_style||'—'}\nFields: ${(parsed.fields||[]).join(', ')||'—'}${parsed.notes?'\n'+parsed.notes:''}`;
-    } else { s.innerHTML='⚠ Could not parse — fill in manually'; }
-  } catch(e) { s.innerHTML='⚠ Error reading template'; }
-}
-function addLineItem(desc='',hrs='',rate='') {
-  lineItems.push({id:uid(),desc,hrs,rate});
+function addLineItem(desc='', dateRange='', hrs='', rate='') {
+  lineItems.push({id:uid(), desc, dateRange, hrs, rate});
   renderLineItems();
 }
-function removeLineItem(id) { lineItems=lineItems.filter(x=>x.id!==id); renderLineItems(); }
-function updateLI(id,field,val) { const li=lineItems.find(x=>x.id===id); if(li){li[field]=val;} renderTotals(); }
+function removeLineItem(id) {
+  lineItems = lineItems.filter(x=>x.id!==id);
+  renderLineItems();
+}
+function updateLI(id, field, val) {
+  const li = lineItems.find(x=>x.id===id);
+  if (li) li[field] = val;
+  renderTotals();
+  updateInvPreview();
+}
 function renderLineItems() {
   document.getElementById('li-body').innerHTML = lineItems.map(li=>`
     <tr>
-      <td><input type="text" value="${li.desc||''}" oninput="updateLI('${li.id}','desc',this.value)" placeholder="Service description" style="width:100%;" /></td>
-      <td><input type="number" value="${li.hrs||''}" oninput="updateLI('${li.id}','hrs',this.value)" placeholder="0" min="0" step="0.25" style="width:70px;" /></td>
-      <td><input type="number" value="${li.rate||''}" oninput="updateLI('${li.id}','rate',this.value)" placeholder="0" min="0" step="5" style="width:70px;" /></td>
-      <td style="text-align:right;font-weight:500;">${li.hrs&&li.rate?'$'+Math.round(parseFloat(li.hrs)*parseFloat(li.rate)).toLocaleString():'—'}</td>
+      <td><input type="text" value="${li.desc||''}" oninput="updateLI('${li.id}','desc',this.value)" placeholder="Freelance Design Hours" style="width:100%;" /></td>
+      <td><input type="text" value="${li.dateRange||''}" oninput="updateLI('${li.id}','dateRange',this.value)" placeholder="6/2–6/6" style="width:100%;" /></td>
+      <td><input type="number" value="${li.hrs||''}" oninput="updateLI('${li.id}','hrs',this.value)" placeholder="0" min="0" step="0.25" style="width:56px;" /></td>
+      <td><input type="number" value="${li.rate||''}" oninput="updateLI('${li.id}','rate',this.value)" placeholder="0" min="0" step="5" style="width:60px;" /></td>
+      <td style="text-align:right;font-weight:500;">${li.hrs&&li.rate?'$'+(parseFloat(li.hrs)*parseFloat(li.rate)).toFixed(2):'—'}</td>
       <td><button class="btn small danger" onclick="removeLineItem('${li.id}')">×</button></td>
     </tr>`).join('');
   renderTotals();
+  updateInvPreview();
 }
 function renderTotals() {
-  const sub = lineItems.reduce((s,x)=>s+(parseFloat(x.hrs)||0)*(parseFloat(x.rate)||0),0);
+  const total = lineItems.reduce((s,x)=>s+(parseFloat(x.hrs)||0)*(parseFloat(x.rate)||0), 0);
   document.getElementById('inv-totals').innerHTML=`
-    <div class="inv-total-row"><span class="inv-total-label">Subtotal</span><span class="inv-total-value">$${Math.round(sub).toLocaleString()}</span></div>
-    <div class="inv-total-row grand"><span class="inv-total-label" style="font-weight:600;">Total due</span><span class="inv-total-value">$${Math.round(sub).toLocaleString()}</span></div>`;
+    <div class="inv-total-row grand"><span class="inv-total-label" style="font-weight:600;">Total</span><span class="inv-total-value">$${total.toFixed(2)}</span></div>`;
 }
 function pullFromEntries() {
   const cId = document.getElementById('inv-client').value;
   let ents = S.entries.filter(e=>!e.billed && !e.banked);
-  if (cId) ents=ents.filter(e=>e.clientId===cId);
+  if (cId) ents = ents.filter(e=>e.clientId===cId);
   if (!ents.length) { toast('No unbilled entries'+(cId?' for this client':'')); return; }
-  lineItems=[];
-  ents.forEach(e=>addLineItem(
-    (e.desc||e.clientName)+(e.date?' ('+fmtDate(e.date)+')':''),
-    minsToDecimal(e.mins), e.rate||''
+  lineItems = [];
+  ents.forEach(e => addLineItem(
+    e.desc || 'Freelance Design Hours',
+    fmtDate(e.date),
+    minsToDecimal(e.mins),
+    e.rate || ''
   ));
 }
-async function generateInvoice() {
-  const btn=document.getElementById('gen-btn');
-  const st=document.getElementById('gen-status');
-  btn.disabled=true; st.textContent='Building invoice…';
-  S.invoiceFrom = {
-    name: document.getElementById('inv-from-name').value,
-    email: document.getElementById('inv-from-email').value,
-    addr: document.getElementById('inv-from-addr').value
-  };
-  save();
-  const invData = {
-    from: S.invoiceFrom,
-    billTo: {
-      client: document.getElementById('inv-client').options[document.getElementById('inv-client').selectedIndex]?.text||'',
-      parent: document.getElementById('inv-parent').value,
-      address: document.getElementById('inv-client-addr').value
-    },
-    meta: {
-      number: document.getElementById('inv-num').value,
-      date: fmtDate(document.getElementById('inv-date').value),
-      due: fmtDate(document.getElementById('inv-due').value),
-      billcode: document.getElementById('inv-billcode').value
-    },
-    lineItems: lineItems.map(x=>({desc:x.desc,hrs:parseFloat(x.hrs)||0,rate:parseFloat(x.rate)||0,amount:Math.round((parseFloat(x.hrs)||0)*(parseFloat(x.rate)||0))})),
-    total: Math.round(lineItems.reduce((s,x)=>s+(parseFloat(x.hrs)||0)*(parseFloat(x.rate)||0),0)),
-    notes: document.getElementById('inv-notes').value
-  };
-  const hasTemplate = !!tplBase64;
-  try {
-    const msgContent = (hasTemplate && tplMime && tplMime.startsWith('image/'))
-      ? [{type:'image',source:{type:'base64',media_type:tplMime,data:tplBase64}},{type:'text',text:buildInvoicePrompt(invData,true)}]
-      : buildInvoicePrompt(invData, false);
-    const res = await apiFetch({model:'claude-sonnet-4-20250514',max_tokens:4000,system:'You are an invoice generator. Output ONLY a complete valid HTML document. No markdown, no code fences, no explanation.',messages:[{role:'user',content:msgContent}]});
-    const data = await res.json();
-    let html = data.content.map(x=>x.text||'').join('').replace(/^```html\n?|^```\n?|```$/gm,'').trim();
-    const win=window.open('','_blank');
-    win.document.write(html); win.document.close();
-    setTimeout(()=>win.print(),800);
-    S.invoiceCtr=(S.invoiceCtr||1)+1;
-    document.getElementById('inv-num').value='INV-'+String(S.invoiceCtr).padStart(3,'0');
-    save();
-    st.textContent='Opened — Print → Save as PDF';
-  } catch(e) { st.textContent='Error. Try again.'; console.error(e); }
-  btn.disabled=false;
+
+function buildInvoiceHTML() {
+  const stmtNum = document.getElementById('inv-num').value || '';
+  const dateVal = document.getElementById('inv-date').value;
+  const dateStr = dateVal ? new Date(dateVal+'T12:00:00').toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'}).replace(/\//g,'.') : '';
+  const clientCompany = document.getElementById('inv-client-company').value || '';
+  const clientAddr1 = document.getElementById('inv-client-addr1').value || '';
+  const clientAddr2 = document.getElementById('inv-client-addr2').value || '';
+  const notes = document.getElementById('inv-notes').value || '';
+  const total = lineItems.reduce((s,x)=>s+(parseFloat(x.hrs)||0)*(parseFloat(x.rate)||0), 0);
+
+  const lineRows = lineItems.map(li => {
+    const amt = (parseFloat(li.hrs)||0)*(parseFloat(li.rate)||0);
+    return `<tr>
+      <td class="item-desc">${li.desc||''}</td>
+      <td class="item-date">${li.dateRange||''}</td>
+      <td class="item-num">${li.hrs||''}</td>
+      <td class="item-num">$${parseFloat(li.rate||0).toFixed(2)}</td>
+      <td class="item-num">$${amt.toFixed(2)}</td>
+    </tr>`;
+  }).join('');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Statement ${stmtNum}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 11pt; color: #1a1a1a; background: #fff; padding: 48px 56px; max-width: 780px; margin: 0 auto; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 36px; }
+  .from-name { font-size: 18pt; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px; }
+  .from-contact { font-size: 9pt; color: #555; line-height: 1.7; }
+  .meta { text-align: right; font-size: 9pt; color: #555; line-height: 1.8; }
+  .meta strong { font-size: 11pt; color: #1a1a1a; }
+  .reminder { font-size: 8.5pt; color: #888; margin-bottom: 28px; font-style: italic; }
+  .bill-to-label { font-size: 8pt; text-transform: uppercase; letter-spacing: 0.08em; color: #888; margin-bottom: 6px; }
+  .bill-to { margin-bottom: 32px; }
+  .bill-to-name { font-size: 12pt; font-weight: 600; }
+  .bill-to-addr { font-size: 10pt; color: #444; line-height: 1.7; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+  thead tr { border-bottom: 1.5px solid #1a1a1a; }
+  th { font-size: 8.5pt; text-transform: uppercase; letter-spacing: 0.07em; padding: 6px 8px 8px; text-align: left; color: #555; }
+  th.item-num, td.item-num { text-align: right; }
+  td { padding: 10px 8px; font-size: 10.5pt; border-bottom: 0.5px solid #e0e0e0; vertical-align: top; }
+  td.item-date { color: #555; font-size: 9.5pt; }
+  .total-row td { border-bottom: none; border-top: 1.5px solid #1a1a1a; font-weight: 700; font-size: 11pt; padding-top: 12px; }
+  .notes { margin-top: 32px; font-size: 9pt; color: #666; line-height: 1.6; }
+  @media print {
+    body { padding: 0; }
+    @page { margin: 0.6in 0.7in; }
+  }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="from-name">JOHN Q. DO</div>
+      <div class="from-contact">
+        johndo.design@gmail.com<br>
+        765.490.0449<br>
+        www.johnqdo.com
+      </div>
+    </div>
+    <div class="meta">
+      <strong>Statement: ${stmtNum}</strong><br>
+      Date: ${dateStr}
+    </div>
+  </div>
+
+  <div class="reminder">Reminder: Please include statement number on your check · Balance due in 30 days</div>
+
+  <div class="bill-to">
+    <div class="bill-to-label">Billed To:</div>
+    <div class="bill-to-name">${clientCompany}</div>
+    <div class="bill-to-addr">${clientAddr1}${clientAddr1&&clientAddr2?'<br>':''}${clientAddr2}</div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:32%;">Item</th>
+        <th style="width:22%;">Date</th>
+        <th class="item-num" style="width:10%;">Hours</th>
+        <th class="item-num" style="width:12%;">Rate</th>
+        <th class="item-num" style="width:12%;">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${lineRows}
+      <tr class="total-row">
+        <td colspan="4" style="text-align:right;padding-right:16px;">Total</td>
+        <td class="item-num">$${total.toFixed(2)}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  ${notes ? `<div class="notes">${notes}</div>` : ''}
+</body>
+</html>`;
 }
-function buildInvoicePrompt(d, hasTemplate) {
-  return `Generate a complete professional invoice HTML document.
 
-FROM: ${d.from.name||'[Name]'} · ${d.from.email||''} · ${d.from.addr||''}
-BILL TO: ${d.billTo.client||'[Client]'} ${d.billTo.parent?'c/o '+d.billTo.parent:''} · ${d.billTo.address||''}
-INVOICE #: ${d.meta.number} · DATE: ${d.meta.date} · DUE: ${d.meta.due}${d.meta.billcode?' · PO: '+d.meta.billcode:''}
+function updateInvPreview() {
+  const preview = document.getElementById('inv-preview');
+  if (!preview) return;
+  const html = buildInvoiceHTML();
+  // Render a scaled preview
+  preview.innerHTML = `<div style="transform:scale(0.65);transform-origin:top left;width:154%;pointer-events:none;">
+    <iframe srcdoc="${html.replace(/"/g,'&quot;')}" style="width:780px;height:1000px;border:none;"></iframe>
+  </div>`;
+  preview.style.height = '660px';
+  preview.style.overflow = 'hidden';
+}
 
-LINE ITEMS:
-${d.lineItems.map(x=>`${x.desc}  ${x.hrs}h @ $${x.rate}/hr = $${x.amount.toLocaleString()}`).join('\n')||'(none)'}
-
-TOTAL DUE: $${d.total.toLocaleString()}
-NOTES: ${d.notes||'(none)'}
-
-${hasTemplate?'Match the uploaded template layout, colors, and style closely.':'Use a clean, minimal, professional design with excellent print formatting.'}
-
-Requirements: Full HTML with embedded CSS only, @media print styles, professional typography (system fonts), clear hierarchy, dollar amounts with commas, print-ready.`;
+function generateInvoice() {
+  const html = buildInvoiceHTML();
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  setTimeout(() => win.print(), 600);
+  S.invoiceCtr = (S.invoiceCtr||1) + 1;
+  const nextNum = document.getElementById('inv-num').value.replace(/\d+$/, n => String(parseInt(n)+1).padStart(n.length,'0'));
+  document.getElementById('inv-num').value = nextNum;
+  save();
+  document.getElementById('gen-status').textContent = 'Print → Save as PDF';
 }
 
 // ═══════════════════════════════════════════════════════════════════
